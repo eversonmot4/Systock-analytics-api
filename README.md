@@ -3,9 +3,6 @@
 **Nome do projeto**  
 SyStock Analytics API
 
-**Short description**  
-API REST somente-leitura em FastAPI que expõe views analíticas de um Data Warehouse PostgreSQL para consumo por dashboards.
-
 ## Overview
 
 API leve cujo propósito é disponibilizar via HTTP os resultados de views analíticas já existentes no Data Warehouse. A aplicação consulta essas views e retorna registros em JSON, prontos para consumo por frontends ou ferramentas de BI.
@@ -125,9 +122,6 @@ Nota: o script usa mocks e **não** requer conexão com o Data Warehouse.
 ## License
 
 Verifique o arquivo `LICENSE` no repositório para os termos de licença aplicáveis.
-# SyStock Analytics API
-
-Lightweight FastAPI application exposing read-only views from a data warehouse.
 
 Quick start
 

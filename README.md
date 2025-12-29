@@ -1,146 +1,172 @@
 # SyStock Analytics API
 
-Lightweight FastAPI application exposing read-only views from a data warehouse.
+**Nome do projeto**  
+SyStock Analytics API
 
-Overview
---------
-API leve cuja responsabilidade é disponibilizar, via HTTP, resultados de views analíticas já existentes no Data Warehouse. A API apenas consulta essas views e entrega os registros em JSON, prontos para consumo por frontends ou ferramentas de BI.
+**Short description**  
+API REST somente-leitura em FastAPI que expõe views analíticas de um Data Warehouse PostgreSQL para consumo por dashboards.
 
-Observação importante: esta API não executa ETL nem gerencia a infra do banco de dados.
+## Overview
 
-Problem Statement
------------------
-Organizações precisam disponibilizar dados analíticos consolidados para dashboards e ferramentas de visualização sem expor mecanismos de escrita ou lógica de transformação no serviço de API. É necessário uma camada de leitura segura e simples que exponha as views já consolidadas no Data Warehouse.
+API leve cujo propósito é disponibilizar via HTTP os resultados de views analíticas já existentes no Data Warehouse. A aplicação consulta essas views e retorna registros em JSON, prontos para consumo por frontends ou ferramentas de BI.
 
-Key Features
-------------
-- **API somente-leitura (read-only).**
-- **Endpoints organizados por domínio**: vendas, lojas, produtos, estoque, categorias.
-- **Segurança por whitelist de views (nomes de views controlados no código).**
-- **Documentação automática via Swagger (OpenAPI).**
-- **Respostas serializadas com Pydantic para consistência de contrato.**
+Importante: esta API não executa ETL nem gerencia a infraestrutura do banco de dados.
 
-Architecture & Components
-------------
-- FastAPI: roteamento e documentação automática.
-- Routers: organização por domínio (ex.: `vendas.py`, `lojas.py`, etc.).
-- Camada de acesso a dados (repository): responsável por executar `SELECT * FROM <view>` apenas para views autorizadas (whitelist).
-- Conexão com banco obtida a partir de `DATABASE_URL`
+## Problem Statement
+
+Organizações precisam expor dados analíticos consolidados para dashboards e ferramentas de visualização sem abrir mecanismos de escrita ou adicionar lógica de transformação na camada de API. É necessária uma camada de leitura segura, simples e auditável que entregue os conjuntos de dados consolidados já criados no Data Warehouse.
+
+## Key Features
+
+- API somente-leitura (read-only).
+- Endpoints organizados por domínio: vendas, lojas, produtos, estoque, categorias.
+- Segurança por whitelist de views (nomes de views controlados no código).
+- Documentação automática via Swagger (OpenAPI).
+- Respostas serializadas via Pydantic para consistência do contrato.
+
+## Architecture & Components
+
+- FastAPI: roteamento, validação e documentação automática.
+- Routers: organização por domínio (ex.: `routers/vendas.py`, `routers/lojas.py`).
+- Camada de acesso a dados (repository): executa `SELECT * FROM <view>` apenas para views autorizadas (whitelist).
+- Conexão com o banco obtida a partir de `DATABASE_URL`.
 - Dependência de um Data Warehouse PostgreSQL externo que contém as views consultadas.
-- 
-lllllllllllllllllllllllllllllllllllllllllllllllllll
 
-Technologies
-------------
-- Python (3.10+)
+## Technologies
+
+- Python 3.10+
 - FastAPI
 - SQLAlchemy (engine/core)
 - Pydantic
 - PostgreSQL (Data Warehouse)
 
-Repository Layout (high level)
------------------------------
-- `main.py/` — aplicação FastAPI
-- `database.py/` — carregamento de DATABASE_URL e criação do engine
-- `routers/` — endpoints organizados por domínio
+## Repository Layout (high level)
+
+- `main.py` — aplicação FastAPI (entrada)
+- `database.py` — carregamento de `DATABASE_URL` e criação do engine
+- `routers/` — endpoints por domínio (`vendas.py`, `lojas.py`, `categorias.py`, `produtos.py`, `estoque.py`)
 - `services/` — repository para leitura das views
 - `schemas/` — modelos Pydantic
-- `tests/` — scripts de verificação (ex.: `route_checks.py/`)
-- `routers/` — endpoints organizados por domínio
+- `tests/` — scripts de verificação (ex.: `tests/route_checks.py`)
+- `.env.example`, `requirements.txt`, `Dockerfile`, `.gitignore`, `README.md`
 
+## Getting Started
 
-Getting Started
----------------
-Prerequisites: Docker and Docker Compose installed, and Python 3.9+ for local development.
+Pré-requisitos
+- Python 3.10+ instalado
+- Acesso de rede ao Data Warehouse quando necessário para integração
 
-Quick start (development with Docker):
-
+Passos iniciais
+1. Clonar o repositório:
 ```bash
-# Start services and the local development environment
-docker-compose up --build -d
-
-# Run ETL pipeline (example entrypoint — adjust as needed)
-docker-compose exec <service> python -m pipeline_manager.pipeline_flow
+git clone <url-do-repositorio>
+cd <repositorio>
 ```
-
-See [DOCKER_SETUP.md](DOCKER_SETUP.md) for full container configuration and [START_HERE.md](START_HERE.md) for project onboarding steps.
-
-How to run locally
--------------------
-You can run this project either using Docker Compose (recommended) or locally with Python for development. Choose the option that fits your environment.
-
-- Requirements: Docker & Docker Compose (for Docker), Python 3.9+ and `pip` (for local development).
-
-- Option A — Docker Compose (recommended):
-
-```bash
-# Start all services (Postgres, ETL, etc.)
-docker-compose up --build -d
-
-# Follow ETL container logs
-docker-compose logs -f etl-pipeline
-
-# Execute the main pipeline inside the ETL container
-docker-compose exec etl-pipeline python -m pipeline_manager.pipeline_flow
-```
-
-Note: the ETL service is named `etl-pipeline` in [docker-compose.yml](docker-compose.yml).
-
-- Option B — Run locally with Python (development):
-
-1. Start only the database service (recommended) or ensure a PostgreSQL instance is available:
-
-```bash
-docker-compose up -d postgres-dw
-```
-
-2. Create and activate a virtual environment, then install dependencies:
-
+2. Criar e ativar um ambiente virtual:
 ```bash
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Unix / macOS
 source .venv/bin/activate
-
-pip install -r etl_pipeline/requirements.txt
 ```
 
-3. Configure required environment variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`). Use a `.env` file or your shell to set them.
+## How to run locally
 
-4. Run the pipeline locally:
+1. Criar um arquivo `.env` a partir de `.env.example` e preencher as variáveis mínimas:
+
+Exemplo de `.env` para testes locais:
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/systock_dw
+DB_VIEW_PREFIX=data_warehouse.schema.views.
+```
+
+- `DATABASE_URL` (obrigatório): string de conexão com o PostgreSQL que será usada para criar o engine.
+- `DB_VIEW_PREFIX` (opcional): prefixo aplicado ao identificador da view quando necessário (ex.: `data_warehouse.schema.views.`). A composição final é `<DB_VIEW_PREFIX><view_name>`.
+
+2. Instalar dependências:
+```bash
+python -m pip install -r requirements.txt
+```
+
+3. Subir a API localmente:
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Aviso explícito: o Data Warehouse é externo a este repositório; **não** existe `docker-compose` do banco neste projeto. Garanta que `DATABASE_URL` aponte para uma instância com as views já criadas.
+
+## Verificação manual das rotas
+
+Existe um script de verificação manual em `tests/route_checks.py` com as seguintes características:
+- Realiza requisições internas à aplicação via `TestClient`.
+- Mocka a camada de repositório para não depender do banco real.
+- Verifica que os endpoints configurados respondem corretamente (HTTP 200) e que as rotas estão devidamente expostas.
+
+Como executar:
+```bash
+python -m pip install -r requirements.txt
+python -m pip install httpx
+python tests/route_checks.py
+```
+
+Nota: o script usa mocks e **não** requer conexão com o Data Warehouse.
+
+## Development / Testing
+
+- Utilize um ambiente virtual isolado (`.venv`).
+- `tests/route_checks.py` fornece uma verificação rápida de roteamento; não há testes de integração com o banco neste repositório.
+- Para alterações que exigem validação com o DW real, execute testes de integração em um ambiente controlado que disponha das views necessárias.
+
+## Contributing
+
+- Abra issues para discutir mudanças ou reportar problemas.
+- Envie pull requests pequenos e focados; inclua descrição clara das mudanças.
+- Não introduza operações de escrita no banco nem modifique a whitelist de views sem justificativa técnica e revisão.
+- Atualize `requirements.txt` se adicionar dependências.
+
+## License
+
+Verifique o arquivo `LICENSE` no repositório para os termos de licença aplicáveis.
+# SyStock Analytics API
+
+Lightweight FastAPI application exposing read-only views from a data warehouse.
+
+Quick start
+
+1. Copy `.env.example` to `.env` and set `DATABASE_URL` (see Database section below).
+2. Install dependencies:
 
 ```bash
-python -m pipeline_manager.pipeline_flow
+pip install -r requirements.txt
 ```
 
-- Running tests:
+3. Run locally:
 
 ```bash
-pip install -r etl_pipeline/requirements.txt
-pytest -q
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Helpful files: [docker-compose.yml](docker-compose.yml), [etl_pipeline/requirements.txt](etl_pipeline/requirements.txt), and the pipeline entrypoint [pipeline_manager/pipeline_flow.py](pipeline_manager/pipeline_flow.py).
+API endpoints (auto-documented via Swagger):
 
-Development
------------
-To run tests locally (from a configured Python environment):
+- GET /vendas/evolucao
+- GET /lojas/performance
+- GET /categorias/top
+- GET /produtos/top
+- GET /estoque/valor-atual
+- GET /vendas/semanais
 
-```bash
-python -m pip install -r etl_pipeline/requirements.txt
-pytest -q
+Notes
+- This service is read-only: it performs `SELECT * FROM <view>` and returns JSON.
+- The API depends on an external PostgreSQL data warehouse; the database container or compose file is NOT part of this repository.
+- Do not run any writes against the database from this service.
+
+Database (local test example)
+- Example environment values for local testing:
+
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/systock_dw
+DB_VIEW_PREFIX=data_warehouse.schema.views.
 ```
 
-For iterative development, run pipeline modules directly or use the provided orchestration in `pipeline_manager`.
+- `DATABASE_URL` is the only env var used for the DB connection. `DB_VIEW_PREFIX` is only used to prefix view identifiers when composing the read-only queries.
 
-Contributing
-------------
-Contributions are welcome. Please follow these guidelines:
-- Open an issue to discuss major changes.
-- Create feature branches and submit pull requests with descriptive titles.
-- Include tests for new functionality where applicable.
-
-License
--------
-This project is licensed under the terms in the repository `LICENSE` file.
+Deploy
+- Can be containerized (Dockerfile provided) or deployed to Railway/Render. Ensure the target environment provides a reachable `DATABASE_URL` and the views exist in the expected schema/prefix.

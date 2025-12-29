@@ -153,20 +153,23 @@ API endpoints (auto-documented via Swagger):
 - GET /estoque/valor-atual
 - GET /vendas/semanais
 
-Notes
-- This service is read-only: it performs `SELECT * FROM <view>` and returns JSON.
-- The API depends on an external PostgreSQL data warehouse; the database container or compose file is NOT part of this repository.
-- Do not run any writes against the database from this service.
+## Notas
+- Este serviço é somente leitura: executa `SELECT * FROM <view>` e retorna JSON.
+- A API depende de um Data Warehouse PostgreSQL externo; o container do banco ou arquivo de compose **NÃO** faz parte deste repositório.
+- Não execute nenhuma operação de escrita no banco a partir deste serviço.
 
-Database (local test example)
-- Example environment values for local testing:
+## Banco de Dados (exemplo de teste local)
+- Valores de ambiente de exemplo para testes locais:
 
 ```
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/systock_dw
 DB_VIEW_PREFIX=data_warehouse.schema.views.
 ```
 
-- `DATABASE_URL` is the only env var used for the DB connection. `DB_VIEW_PREFIX` is only used to prefix view identifiers when composing the read-only queries.
 
-Deploy
-- Can be containerized (Dockerfile provided) or deployed to Railway/Render. Ensure the target environment provides a reachable `DATABASE_URL` and the views exist in the expected schema/prefix.
+- `DATABASE_URL` é a única variável de ambiente usada para a conexão com o banco.  
+- `DB_VIEW_PREFIX` é usada apenas para prefixar os identificadores das views ao compor as consultas somente leitura.
+
+## Deploy
+- Pode ser containerizado (Dockerfile fornecido) ou implantado no Railway/Render.
+- Garanta que o ambiente de destino forneça um `DATABASE_URL` acessível e que as views existam no schema/prefixo esperado.

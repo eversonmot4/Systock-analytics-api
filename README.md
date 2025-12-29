@@ -56,8 +56,8 @@ Pré-requisitos
 Passos iniciais
 1. Clonar o repositório:
 ```bash
-git clone <url-do-repositorio>
-cd <repositorio>
+git clone https://github.com/eversonmot4/Systock-analytics-api.git
+cd Systock-analytics-api
 ```
 2. Criar e ativar um ambiente virtual:
 ```bash

@@ -34,7 +34,7 @@ def mock_fetch(view_name: str):
 for mod in (vendas, lojas, categorias, produtos, estoque):
     setattr(mod, "fetch_view", mock_fetch)
 
-# Também substitui `repository.fetch_view` caso outros imports usem-no diretamente
+# Também substitui `repository.fetch_view`
 repository.fetch_view = mock_fetch
 
 

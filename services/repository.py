@@ -7,12 +7,12 @@ from database import engine, DB_VIEW_PREFIX
 # de nomes fornecidos pelo usuário e mitiga o risco de SQL injection quando
 # é necessário compor o identificador da tabela/view na string SQL.
 ALLOWED_VIEWS = {
-    "view_evolucao_vendas",
-    "view_preformance_loja",
-    "view_top_categorias",
-    "view_top_produtos",
-    "view_valor_estoque_atual",
-    "view_vendas_semanais",
+    "vw_evolucao_vendas",
+    "vw_performance_lojas",
+    "vw_categorias_mais_vendidas",
+    "vw_produtos_mais_vendidos",
+    "vw_valor_estoque_atual",
+    "vw_vendas_semanais",
 }
 
 

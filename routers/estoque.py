@@ -9,7 +9,7 @@ router = APIRouter()
 @router.get("/valor-atual", response_model=List[Row])
 def get_valor_estoque_atual():
     try:
-        rows = fetch_view("view_valor_estoque_atual")
+        rows = fetch_view("vw_valor_estoque_atual")
         return [Row(__root__=r) for r in rows]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

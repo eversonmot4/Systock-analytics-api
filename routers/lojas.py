@@ -9,7 +9,7 @@ router = APIRouter()
 @router.get("/performance", response_model=List[Row])
 def get_performance_loja():
     try:
-        rows = fetch_view("view_preformance_loja")
+        rows = fetch_view("vw_performance_lojas")
         return [Row(__root__=r) for r in rows]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,9 +1,19 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from routers import vendas, lojas, categorias, produtos, estoque
 from database import engine
 
 app = FastAPI(title="SyStock Analytics API", version="0.1.0", description="Read-only analytics views for SyStock")
+
+# Configuração de CORS para o frontend local
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # incluir routers
 app.include_router(vendas.router, prefix="/vendas", tags=["vendas"])

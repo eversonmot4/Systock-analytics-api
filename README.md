@@ -1,309 +1,190 @@
 # SyStock Analytics API
 
-**Nome do projeto**  
-SyStock Analytics API
+API REST desenvolvida com **FastAPI** para disponibilizar dados analíticos de um **Data Warehouse PostgreSQL**. O serviço consulta views previamente criadas e retorna os resultados em JSON para consumo por dashboards, aplicações frontend e ferramentas de Business Intelligence (BI).
 
-**Short description**  
-API REST somente-leitura em FastAPI que expõe views analíticas de um Data Warehouse PostgreSQL para consumo por dashboards.
+> **Importante:** esta API é somente leitura. Ela não executa processos de ETL, não realiza operações de escrita e não gerencia a infraestrutura do Data Warehouse.
 
-## Overview
+## Objetivo
 
-API leve cujo propósito é disponibilizar via HTTP os resultados de views analíticas já existentes no Data Warehouse. A aplicação consulta essas views e retorna registros em JSON, prontos para consumo por frontends ou ferramentas de BI.
+Oferecer uma camada HTTP simples e controlada para consultar dados consolidados no Data Warehouse, sem expor operações de alteração no banco nem adicionar regras de transformação à camada da API.
 
-Importante: esta API não executa ETL nem gerencia a infraestrutura do banco de dados.
+## Funcionalidades
 
-## Problem Statement
+- **Consultas somente leitura:** acesso aos dados por meio de instruções `SELECT`.
+- **Endpoints por domínio:** rotas organizadas para vendas, lojas, categorias, produtos e estoque.
+- **Whitelist de views:** somente views previamente autorizadas no código podem ser consultadas.
+- **Documentação OpenAPI:** documentação interativa gerada pelo FastAPI.
+- **Validação com Pydantic:** respostas estruturadas para manter a consistência do contrato da API.
 
-Organizações precisam expor dados analíticos consolidados para dashboards e ferramentas de visualização sem abrir mecanismos de escrita ou adicionar lógica de transformação na camada de API. É necessária uma camada de leitura segura, simples e auditável que entregue os conjuntos de dados consolidados já criados no Data Warehouse.
+## Tecnologias
 
-## Key Features
+| Tecnologia | Finalidade |
+|---|---|
+| Python 3.10+ | Linguagem de desenvolvimento |
+| FastAPI | Construção da API REST |
+| SQLAlchemy | Conexão e acesso ao banco de dados |
+| Pydantic | Validação e serialização de dados |
+| PostgreSQL | Banco de dados do Data Warehouse |
 
-- API somente-leitura (read-only).
-- Endpoints organizados por domínio: vendas, lojas, produtos, estoque, categorias.
-- Segurança por whitelist de views (nomes de views controlados no código).
-- Documentação automática via Swagger (OpenAPI).
-- Respostas serializadas via Pydantic para consistência do contrato.
+## Arquitetura
 
-## Architecture & Components
+A aplicação está organizada em componentes com responsabilidades específicas:
 
-- FastAPI: roteamento, validação e documentação automática.
-- Routers: organização por domínio (ex.: `routers/vendas.py`, `routers/lojas.py`).
-- Camada de acesso a dados (repository): executa `SELECT * FROM <view>` apenas para views autorizadas (whitelist).
-- Conexão com o banco obtida a partir de `DATABASE_URL`.
-- Dependência de um Data Warehouse PostgreSQL externo que contém as views consultadas.
+- **FastAPI:** gerencia o roteamento, a validação e a documentação da API.
+- **Routers:** agrupam os endpoints por domínio de negócio.
+- **Repository (`services/`):** executa consultas nas views autorizadas pela whitelist.
+- **Database (`database.py`):** carrega a variável `DATABASE_URL` e configura o engine do SQLAlchemy.
+- **Schemas (`schemas/`):** definem os modelos Pydantic utilizados na estruturação das respostas.
 
-## Technologies
+O acesso aos dados depende de um Data Warehouse PostgreSQL externo, que deve conter as views consultadas pela aplicação.
 
-- Python 3.10+
-- FastAPI
-- SQLAlchemy (engine/core)
-- Pydantic
-- PostgreSQL (Data Warehouse)
+## Estrutura do projeto
 
-## Repository Layout (high level)
-
-- `main.py` — aplicação FastAPI (entrada)
-- `database.py` — carregamento de `DATABASE_URL` e criação do engine
-- `routers/` — endpoints por domínio (`vendas.py`, `lojas.py`, `categorias.py`, `produtos.py`, `estoque.py`)
-- `services/` — repository para leitura das views
-- `schemas/` — modelos Pydantic
-- `tests/` — scripts de verificação (ex.: `tests/route_checks.py`)
-- `.env.example`, `requirements.txt`, `Dockerfile`, `.gitignore`, `README.md`
-
-## Getting Started
-
-Pré-requisitos
-- Python 3.10+ instalado
-- Acesso de rede ao Data Warehouse quando necessário para integração
-
-Passos iniciais
-1. Clonar o repositório:
-```bash
-git clone <url-do-repositorio>
-cd <repositorio>
-```
-2. Criar e ativar um ambiente virtual:
-```bash
-python -m venv .venv
-source .venv/bin/activate
+```text
+.
+├── main.py                 # Inicialização da aplicação FastAPI
+├── database.py             # Configuração da conexão com o banco
+├── routers/                # Endpoints organizados por domínio
+│   ├── vendas.py
+│   ├── lojas.py
+│   ├── categorias.py
+│   ├── produtos.py
+│   └── estoque.py
+├── services/               # Camada de acesso às views
+├── schemas/                # Modelos Pydantic
+├── tests/                  # Scripts de verificação
+│   └── route_checks.py
+├── .env.example            # Exemplo de configuração das variáveis
+├── requirements.txt        # Dependências Python
+├── Dockerfile              # Configuração para containerização
+├── .gitignore
+└── README.md
 ```
 
-## How to run locally
+## Endpoints disponíveis
 
-1. Criar um arquivo `.env` a partir de `.env.example` e preencher as variáveis mínimas:
+As rotas abaixo são disponibilizadas pelo serviço e documentadas automaticamente pelo Swagger/OpenAPI.
 
-Exemplo mínimo:
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/systock_dw
-DB_VIEW_PREFIX=data_warehouse.schema.views.
-```
+| Método | Endpoint |
+|---|---|
+| `GET` | `/vendas/evolucao` |
+| `GET` | `/vendas/semanais` |
+| `GET` | `/lojas/performance` |
+| `GET` | `/categorias/top` |
+| `GET` | `/produtos/top` |
+| `GET` | `/estoque/valor-atual` |
 
-- `DATABASE_URL` (obrigatório): string de conexão com o PostgreSQL que será usada para criar o engine.
-- `DB_VIEW_PREFIX` (opcional): prefixo aplicado ao identificador da view quando necessário (ex.: `data_warehouse.schema.views.`). A composição final é `<DB_VIEW_PREFIX><view_name>`.
+## Como executar localmente
 
-2. Instalar dependências:
-```bash
-python -m pip install -r requirements.txt
-```
+### Pré-requisitos
 
-3. Subir a API localmente:
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+- Python 3.10 ou superior.
+- Acesso ao Data Warehouse PostgreSQL que contém as views utilizadas pela API.
+- Git instalado para clonar o repositório.
 
-Aviso explícito: o Data Warehouse é externo a este repositório; **não** existe `docker-compose` do banco neste projeto. Garanta que `DATABASE_URL` aponte para uma instância com as views já criadas.
+### 1. Clone o repositório
 
-## Verificação manual das rotas
-
-Existe um script de verificação manual em `tests/route_checks.py` com as seguintes características:
-- Realiza requisições internas à aplicação via `TestClient`.
-- Mocka a camada de repositório para não depender do banco real.
-- Verifica que os endpoints configurados respondem corretamente (HTTP 200) e que as rotas estão devidamente expostas.
-
-Como executar:
-```bash
-python -m pip install -r requirements.txt
-python -m pip install httpx
-python tests/route_checks.py
-```
-
-Nota: o script usa mocks e **não** requer conexão com o Data Warehouse.
-
-## Development / Testing
-
-- Utilize um ambiente virtual isolado (`.venv`).
-- `tests/route_checks.py` fornece uma verificação rápida de roteamento; não há testes de integração com o banco neste repositório.
-- Para alterações que exigem validação com o DW real, execute testes de integração em um ambiente controlado que disponha das views necessárias.
-
-## Contributing
-
-- Abra issues para discutir mudanças ou reportar problemas.
-- Envie pull requests pequenos e focados; inclua descrição clara das mudanças.
-- Não introduza operações de escrita no banco nem modifique a whitelist de views sem justificativa técnica e revisão.
-- Atualize `requirements.txt` se adicionar dependências.
-
-## License
-
-Verifique o arquivo `LICENSE` no repositório para os termos de licença aplicáveis.
-# SyStock Analytics API
-
-**Nome do projeto**  
-SyStock Analytics API
-
-## Overview
-
-API leve cujo propósito é disponibilizar via HTTP os resultados de views analíticas já existentes no Data Warehouse. A aplicação consulta essas views e retorna registros em JSON, prontos para consumo por frontends ou ferramentas de BI.
-
-Importante: esta API não executa ETL nem gerencia a infraestrutura do banco de dados.
-
-## Problem Statement
-
-Organizações precisam expor dados analíticos consolidados para dashboards e ferramentas de visualização sem abrir mecanismos de escrita ou adicionar lógica de transformação na camada de API. É necessária uma camada de leitura segura, simples e auditável que entregue os conjuntos de dados consolidados já criados no Data Warehouse.
-
-## Key Features
-
-- API somente-leitura (read-only).
-- Endpoints organizados por domínio: vendas, lojas, produtos, estoque, categorias.
-- Segurança por whitelist de views (nomes de views controlados no código).
-- Documentação automática via Swagger (OpenAPI).
-- Respostas serializadas via Pydantic para consistência do contrato.
-
-## Architecture & Components
-
-- FastAPI: roteamento, validação e documentação automática.
-- Routers: organização por domínio (ex.: `routers/vendas.py`, `routers/lojas.py`).
-- Camada de acesso a dados (repository): executa `SELECT * FROM <view>` apenas para views autorizadas (whitelist).
-- Conexão com o banco obtida a partir de `DATABASE_URL`.
-- Dependência de um Data Warehouse PostgreSQL externo que contém as views consultadas.
-
-## Technologies
-
-- Python 3.10+
-- FastAPI
-- SQLAlchemy (engine/core)
-- Pydantic
-- PostgreSQL (Data Warehouse)
-
-## Repository Layout (high level)
-
-- `main.py` — aplicação FastAPI (entrada)
-- `database.py` — carregamento de `DATABASE_URL` e criação do engine
-- `routers/` — endpoints por domínio (`vendas.py`, `lojas.py`, `categorias.py`, `produtos.py`, `estoque.py`)
-- `services/` — repository para leitura das views
-- `schemas/` — modelos Pydantic
-- `tests/` — scripts de verificação (ex.: `tests/route_checks.py`)
-- `.env.example`, `requirements.txt`, `Dockerfile`, `.gitignore`, `README.md`
-
-## Getting Started
-
-Pré-requisitos
-- Python 3.10+ instalado
-- Acesso de rede ao Data Warehouse quando necessário para integração
-
-Passos iniciais
-1. Clonar o repositório:
 ```bash
 git clone https://github.com/eversonmot4/Systock-analytics-api.git
 cd Systock-analytics-api
 ```
-2. Criar e ativar um ambiente virtual:
+
+### 2. Crie e ative um ambiente virtual
+
 ```bash
 python -m venv .venv
+```
+
+No Linux ou macOS:
+
+```bash
 source .venv/bin/activate
 ```
 
-## How to run locally
+No Windows PowerShell:
 
-1. Criar um arquivo `.env` a partir de `.env.example` e preencher as variáveis mínimas:
-
-Exemplo de `.env` para testes locais:
+```powershell
+.venv\Scripts\Activate.ps1
 ```
+
+### 3. Instale as dependências
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Configure as variáveis de ambiente
+
+Crie o arquivo `.env` com base no modelo disponibilizado:
+
+```bash
+cp .env.example .env
+```
+
+Configure os valores necessários no arquivo `.env`:
+
+```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/systock_dw
 DB_VIEW_PREFIX=data_warehouse.schema.views.
 ```
 
-- `DATABASE_URL` (obrigatório): string de conexão com o PostgreSQL que será usada para criar o engine.
-- `DB_VIEW_PREFIX` (opcional): prefixo aplicado ao identificador da view quando necessário (ex.: `data_warehouse.schema.views.`). A composição final é `<DB_VIEW_PREFIX><view_name>`.
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | Sim | String de conexão utilizada para criar o engine do SQLAlchemy. Deve apontar para uma instância PostgreSQL acessível. |
+| `DB_VIEW_PREFIX` | Não | Prefixo aplicado ao nome da view na composição da consulta. O identificador final é formado por `<DB_VIEW_PREFIX><view_name>`. |
 
-2. Instalar dependências:
-```bash
-python -m pip install -r requirements.txt
-```
+> Os valores acima são exemplos para configuração local. Substitua-os pelos dados de conexão e pelo prefixo correspondentes ao seu ambiente.
 
-3. Subir a API localmente:
+### 5. Inicie a aplicação
+
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Aviso explícito: o Data Warehouse é externo a este repositório; **não** existe `docker-compose` do banco neste projeto. Garanta que `DATABASE_URL` aponte para uma instância com as views já criadas.
+Com a aplicação em execução, acesse:
 
-## Verificação manual das rotas
+- API local: `http://localhost:8000`
+- Documentação Swagger: `http://localhost:8000/docs`
 
-Existe um script de verificação manual em `tests/route_checks.py` com as seguintes características:
-- Realiza requisições internas à aplicação via `TestClient`.
-- Mocka a camada de repositório para não depender do banco real.
-- Verifica que os endpoints configurados respondem corretamente (HTTP 200) e que as rotas estão devidamente expostas.
+> **Atenção:** o Data Warehouse é externo a este repositório. Este projeto não inclui banco de dados nem arquivo `docker-compose` para iniciá-lo. Para que as consultas funcionem, `DATABASE_URL` deve apontar para uma instância que já possua as views necessárias.
 
-Como executar:
+## Verificação das rotas
+
+O projeto inclui o script `tests/route_checks.py` para realizar uma verificação manual dos endpoints.
+
+O script:
+
+- utiliza o `TestClient` para realizar requisições internas à aplicação;
+- substitui a camada de repositório por mocks, evitando consultas ao banco real;
+- verifica se as rotas configuradas estão expostas e respondem com HTTP 200.
+
+Para executar a verificação:
+
 ```bash
-python -m pip install -r requirements.txt
 python -m pip install httpx
 python tests/route_checks.py
 ```
 
-Nota: o script usa mocks e **não** requer conexão com o Data Warehouse.
+A verificação utiliza mocks e, portanto, **não exige conexão com o Data Warehouse**. Ela valida o roteamento da aplicação, mas não substitui testes de integração com o banco de dados.
 
-## Development / Testing
+## Desenvolvimento e testes
 
 - Utilize um ambiente virtual isolado (`.venv`).
-- `tests/route_checks.py` fornece uma verificação rápida de roteamento; não há testes de integração com o banco neste repositório.
-- Para alterações que exigem validação com o DW real, execute testes de integração em um ambiente controlado que disponha das views necessárias.
+- Execute `tests/route_checks.py` após alterações nas rotas.
+- Quando uma mudança depender do comportamento das views ou da conexão com o PostgreSQL, valide-a também em um ambiente controlado com acesso ao Data Warehouse.
+- Não adicione operações de escrita ao banco de dados.
 
-## Contributing
+## Deploy
 
-- Abra issues para discutir mudanças ou reportar problemas.
-- Envie pull requests pequenos e focados; inclua descrição clara das mudanças.
-- Não introduza operações de escrita no banco nem modifique a whitelist de views sem justificativa técnica e revisão.
-- Atualize `requirements.txt` se adicionar dependências.
+O projeto inclui um `Dockerfile` e pode ser containerizado ou implantado em plataformas como Railway e Render. No ambiente de implantação, configure um `DATABASE_URL` acessível e garanta que as views esperadas estejam disponíveis no Data Warehouse.
 
-## License
+## Contribuição
 
-Verifique o arquivo `LICENSE` no repositório para os termos de licença aplicáveis.
+1. Abra uma *issue* para discutir mudanças ou relatar problemas.
+2. Envie *pull requests* pequenos e focados, com uma descrição clara das alterações.
+3. Atualize `requirements.txt` sempre que adicionar dependências.
+4. Não altere a whitelist de views nem introduza operações de escrita sem justificativa técnica e revisão.
 
-Quick start
+## Licença
 
-1. Copy `.env.example` to `.env` and set `DATABASE_URL` (see Database section below).
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Run locally:
-
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-API endpoints (auto-documented via Swagger):
-
-- GET /vendas/evolucao
-- GET /lojas/performance
-- GET /categorias/top
-- GET /produtos/top
-- GET /estoque/valor-atual
-- GET /vendas/semanais
-
-## Notas
-- Este serviço é somente leitura: executa `SELECT * FROM <view>` e retorna JSON.
-- A API depende de um Data Warehouse PostgreSQL externo; o container do banco ou arquivo de compose **NÃO** faz parte deste repositório.
-- Não execute nenhuma operação de escrita no banco a partir deste serviço.
-
-## Banco de Dados (exemplo de teste local)
-- Valores de ambiente de exemplo para testes locais:
-
-
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/systock_dw
-DB_VIEW_PREFIX=data_warehouse.schema.views.
-```
-
-
-- `DATABASE_URL` é a única variável de ambiente usada para a conexão com o banco.  
-- `DB_VIEW_PREFIX` é usada apenas para prefixar os identificadores das views ao compor as consultas somente leitura.
-
-Deploy
-- Pode ser containerizado (ex.: `Dockerfile`) ou implantado em Railway/Render. Garanta que o ambiente forneça um `DATABASE_URL` acessível e que as views existam no schema/prefixo esperado.
-
-Verificação de rotas (manual)
-- Existe um pequeno script de verificação em `tests/route_checks.py`. Ele realiza requisições internas contra a aplicação FastAPI enquanto mocka a camada de repositório, portanto não requer o Data Warehouse real.
-- Objetivo: checagem manual rápida para confirmar que todas as rotas estão conectadas e retornam respostas (útil antes de testes de integração ou deploys).
-- Para executar localmente (em um virtualenv):
-
-```bash
-python -m pip install -r requirements.txt
-python -m pip install httpx
-python tests/route_checks.py
-```
-
-Não remova o script; ele destina-se à verificação manual local e a checagens leves de CI. Não faz parte da superfície de execução da API.
+Consulte o arquivo [`LICENSE`](LICENSE) do repositório para verificar os termos de uso e distribuição do projeto.
